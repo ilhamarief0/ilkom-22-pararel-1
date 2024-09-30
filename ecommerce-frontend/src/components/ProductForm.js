@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 const ProductForm = ({ fetchProducts, editProduct }) => {
   const [name, setName] = useState("");
@@ -48,6 +50,13 @@ const ProductForm = ({ fetchProducts, editProduct }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(productData),
+      });
+
+      Swal.fire({
+        title: "Success!",
+        text: "Produk Berhasil Ditambahkan!",
+        icon: "success",
+        confirmButtonText: "OK",
       });
     }
 

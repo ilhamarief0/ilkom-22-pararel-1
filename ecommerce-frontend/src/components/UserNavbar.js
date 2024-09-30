@@ -1,11 +1,10 @@
-// components/AdminNavbar.js
+// components/UserNavbar.js
 import Link from "next/link";
 import { useRouter } from "next/router";
 import Swal from "sweetalert2"; // Import SweetAlert2
 import "sweetalert2/dist/sweetalert2.min.css"; // Use this instead of .scss
-// Optional: Import default styles for SweetAlert2
 
-const AdminNavbar = () => {
+const UserNavbar = () => {
   const router = useRouter();
 
   const handleLogout = () => {
@@ -20,7 +19,7 @@ const AdminNavbar = () => {
       confirmButtonText: "Yes, logout!",
     }).then((result) => {
       if (result.isConfirmed) {
-        
+        // If confirmed, remove the token and redirect to login page
         localStorage.removeItem("token");
         localStorage.removeItem("role");
 
@@ -55,7 +54,7 @@ const AdminNavbar = () => {
           </Link>
         </li>
         <li>
-          <Link href="/admin/orders" className="text-white hover:text-gray-300">
+          <Link href="/orders" className="text-white hover:text-gray-300">
             Orders
           </Link>
         </li>
@@ -86,4 +85,4 @@ const AdminNavbar = () => {
   );
 };
 
-export default AdminNavbar;
+export default UserNavbar;

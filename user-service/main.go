@@ -41,6 +41,7 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
+// Initialize database connection
 func init() {
 	var err error
 	dsn := "root:@tcp(127.0.0.1:3306)/ecommerce" // Update with your credentials
@@ -53,6 +54,7 @@ func init() {
 	}
 }
 
+// Function to create JWT token
 func createToken(user User) (string, error) {
 	claims := &Claims{
 		Username: user.Username,
@@ -66,6 +68,7 @@ func createToken(user User) (string, error) {
 	return token.SignedString(jwtKey)
 }
 
+// Login handler
 func loginHandler(c *gin.Context) {
 	var loginReq LoginRequest
 	if err := c.ShouldBindJSON(&loginReq); err != nil {
@@ -95,6 +98,7 @@ func loginHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"token": token, "role": user.Role})
 }
 
+// Register handler
 func registerHandler(c *gin.Context) {
 	var registerReq RegisterRequest
 	if err := c.ShouldBindJSON(&registerReq); err != nil {
@@ -124,11 +128,21 @@ func registerHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
 }
 
+// Logout handler (optional, as logout is typically handled on the frontend)
+func logoutHandler(c *gin.Context) {
+	// No server-side logout logic needed for JWT; this is just a dummy route for client logout
+	c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
+}
+
+// Main function to set up routes and start the server
 func main() {
 	r := gin.Default()
 	r.Use(cors.Default())
 
+	// Authentication routes
 	r.POST("/login", loginHandler)
 	r.POST("/register", registerHandler)
-	r.Run(":8081") // User Service on port 8081
+	r.POST("/logout", logoutHandler) // Logout route
+
+	r.Run(":8081") // Start the server on port 8081
 }

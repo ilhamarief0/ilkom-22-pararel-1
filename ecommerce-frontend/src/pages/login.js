@@ -11,6 +11,7 @@ export default function LoginPage() {
   // Check if the user is already logged in
   useEffect(() => {
     const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("token");
     if (token) {
       // Redirect to appropriate page if already logged in
       const role = localStorage.getItem("role");

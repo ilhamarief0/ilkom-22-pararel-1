@@ -9,14 +9,20 @@ const Dashboard = () => {
   const router = useRouter();
   const [products, setProducts] = useState([]);
   const [editProduct, setEditProduct] = useState(null);
+  const [loading, setLoading] = useState(true); // For showing a loader while checking role
 
   // Check user role from localStorage
   useEffect(() => {
     const role = localStorage.getItem("role");
 
-    // If user is not admin, redirect
-    if (role !== "admin") {
-      router.push("/products"); // Redirect to products or another page
+    if (!role) {
+      // If no role is found, redirect to login
+      router.push("/login");
+    } else if (role !== "admin") {
+      // If role is not admin, redirect to another page (e.g., user dashboard)
+      router.push("/products");
+    } else {
+      setLoading(false); // Allow access if role is admin
     }
   }, [router]);
 
@@ -33,6 +39,11 @@ const Dashboard = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  if (loading) {
+    // Optionally, show a loading screen while checking user role
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
