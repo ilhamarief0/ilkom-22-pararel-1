@@ -1,86 +1,74 @@
+// src/pages/login.js
+
 import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import Swal from "sweetalert2"; // Import SweetAlert2
+import { useRouter } from "next/router"; // Pastikan ini diimpor
+import Cookies from "js-cookie";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const router = useRouter();
+  const router = useRouter(); // Inisialisasi router
 
-  // Check if the user is already logged in
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("token");
+    // Cek jika token sudah ada
+    const token = Cookies.get("token");
     if (token) {
-      // Redirect to appropriate page if already logged in
-      const role = localStorage.getItem("role");
-      if (role === "admin") {
-        router.push("/admin/dashboard");
-      } else {
-        router.push("/products");
-      }
+      // Jika sudah login, redirect ke halaman yang diinginkan
+      router.push("/protected"); // Ubah sesuai kebutuhan
     }
   }, [router]);
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const response = await fetch("http://localhost:8081/login", {
+    const res = await fetch("http://localhost:8082/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, password }),
     });
 
-    const data = await response.json();
+    const data = await res.json();
 
-    if (response.ok) {
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.role);
-
-      // Show success message using SweetAlert2
-      Swal.fire({
-        title: "Success!",
-        text: "Login successful!",
-        icon: "success",
-        confirmButtonText: "OK",
-      }).then(() => {
-        // Redirect based on user role
-        if (data.role === "admin") {
-          router.push("/admin/dashboard");
-        } else {
-          router.push("/products");
-        }
-      });
+    if (res.ok) {
+      // Simpan token di cookie
+      Cookies.set("token", data.token);
+      router.push("/protected"); // Redirect ke halaman protected setelah login
     } else {
-      setError(data.error || "Login failed");
+      // Tangani kesalahan
+      alert(data.message);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form className="bg-white p-6 rounded shadow-md" onSubmit={handleLogin}>
-        <h1 className="text-xl font-bold mb-4">Login</h1>
-        {error && <p className="text-red-500">{error}</p>}
-        <input
-          type="text"
-          placeholder="Username"
-          className="border p-2 mb-4 w-full"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="border p-2 mb-4 w-full"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded">
+    <div className="flex items-center justify-center h-screen">
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md">
+        <h2 className="mb-4 text-lg font-bold">Login</h2>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-3 py-2 border rounded"
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-3 py-2 border rounded"
+            required
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-full bg-blue-500 text-white py-2 rounded"
+        >
           Login
         </button>
       </form>

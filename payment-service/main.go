@@ -34,16 +34,12 @@ func main() {
 	// Initialize Gin router
 	r := gin.Default()
 
-	// Configure CORS middleware using gin-contrib/cors
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"}, // Allow your frontend origin
-		AllowMethods:     []string{"POST", "GET", "OPTIONS"},
-		AllowHeaders:     []string{"Authorization", "Content-Type"},
-		AllowCredentials: true,
-	}))
+	// Allow CORS
+	r.Use(cors.Default())
 
-	// Route to handle payment service (order creation)
+	// Routes
 	r.POST("/payments", createPayment)
+	r.GET("/payments/:userId", getPaymentsByUser) // New route to get payments by user ID
 
 	// Start the server
 	r.Run(":8085")
@@ -84,4 +80,39 @@ func createPayment(c *gin.Context) {
 		"totalPrice":  newPayment.TotalPrice,
 		"status":      newPayment.Status,
 	})
+}
+
+func getPaymentsByUser(c *gin.Context) {
+	userID := c.Param("userId")
+
+	// Query to select payments based on the userId
+	query := `SELECT product_name, quantity, total_price, status FROM payments WHERE user_id = ?`
+
+	rows, err := db.Query(query, userID)
+	if err != nil {
+		log.Println("Error querying payments:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve payments"})
+		return
+	}
+	defer rows.Close()
+
+	var payments []Payment
+	for rows.Next() {
+		var payment Payment
+		if err := rows.Scan(&payment.ProductName, &payment.Quantity, &payment.TotalPrice, &payment.Status); err != nil {
+			log.Println("Error scanning payment:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve payments"})
+			return
+		}
+		payments = append(payments, payment)
+	}
+
+	if err = rows.Err(); err != nil {
+		log.Println("Error iterating over payment rows:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve payments"})
+		return
+	}
+
+	// Return payments as JSON
+	c.JSON(http.StatusOK, payments)
 }
