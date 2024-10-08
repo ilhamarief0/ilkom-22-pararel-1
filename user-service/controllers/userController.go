@@ -9,27 +9,22 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// GetAllUsers retrieves all users from the database
 func GetAllUsers(c *gin.Context) {
 	var users []models.User
 
-	// Ambil semua user dari database
 	if result := database.DB.Find(&users); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
-	// Cek apakah ada user yang ditemukan
 	if len(users) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "No users found"})
 		return
 	}
 
-	// Return data dalam bentuk JSON
 	c.JSON(http.StatusOK, users)
 }
 
-// GetUser retrieves a single user by ID
 func GetUser(c *gin.Context) {
 	id := c.Param("id")
 	var user models.User

@@ -122,7 +122,7 @@ func main() {
 	http.HandleFunc("/users", getUsers)
 
 	// Menggunakan middleware CORS
-	cors := handlers.AllowedOrigins([]string{"http://localhost:3001"})
+	cors := handlers.AllowedOrigins([]string{"http://localhost:3000"})
 	corsMethods := handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"})
 	corsHeaders := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
 
