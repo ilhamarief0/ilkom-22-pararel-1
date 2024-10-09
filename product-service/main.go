@@ -43,13 +43,13 @@ func createProduct(c *gin.Context) {
 
 	result, err := db.Exec("INSERT INTO products (name, description, price, stock) VALUES (?, ?, ?, ?)", product.Name, product.Description, product.Price, product.Stock)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create product"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create product", "details": err.Error()})
 		return
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get product ID"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get product ID", "details": err.Error()})
 		return
 	}
 
