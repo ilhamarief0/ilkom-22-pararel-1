@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -19,7 +20,6 @@ type Product struct {
 	Stock       int     `json:"stock"`
 }
 
-// Initialize a variable to hold your database connection
 var db *sql.DB
 
 func init() {
@@ -58,9 +58,9 @@ func createProduct(c *gin.Context) {
 }
 
 func getProducts(c *gin.Context) {
-	rows, err := db.Query("SELECT id, name, description, price, stock FROM products") // Include stock in query
+	rows, err := db.Query("SELECT id, name, description, price, stock FROM products")
 	if err != nil {
-		log.Println("Error querying products:", err) // Add this line for debugging
+		log.Println("Error querying products:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch products"})
 		return
 	}
@@ -70,7 +70,7 @@ func getProducts(c *gin.Context) {
 	for rows.Next() {
 		var product Product
 		if err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Stock); err != nil {
-			log.Println("Error scanning product:", err) // Add this line for debugging
+			log.Println("Error scanning product:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan product"})
 			return
 		}
@@ -121,14 +121,13 @@ func deleteProduct(c *gin.Context) {
 
 func main() {
 	r := gin.Default()
-
-	// Enable CORS
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"}, // Adjust to your frontend URL
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:8080", "*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
 	}))
 
 	r.POST("/products", createProduct)
@@ -136,6 +135,15 @@ func main() {
 	r.GET("/products/:id", getProduct)
 	r.PUT("/products/:id", updateProduct)
 	r.DELETE("/products/:id", deleteProduct)
+
+	// Support preflight requests
+	r.OPTIONS("/products", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+
+	r.OPTIONS("/products/:id", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
 
 	if err := r.Run(":8082"); err != nil { // Product Service on port 8082
 		log.Fatal("Failed to run server:", err)
