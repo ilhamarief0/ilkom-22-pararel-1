@@ -1,16 +1,7 @@
-# ecommercefrontend
+# Flutter E-commerce/Shop App Template by [The Flutter Way](https://www.youtube.com/channel/UCJm7i4g4z7ZGcJA_HKHLCVw)
 
-A new Flutter project.
+Thanks for using this template 😊. If you need any help please check our [**Flutter Shop Doc**](https://abu-anwar.gitbook.io/fluttershop-doc)
 
-## Getting Started
+### Connect with us
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+If you need any help or have any questions, send your email to [theflutterway@gmail.com](mailto:theflutterway@gmail.com).
