@@ -47,3 +47,13 @@ put '/posts/:id' do
   post.to_json
 end
 
+# Menghapus post berdasarkan ID
+delete '/posts/:id' do
+  content_type :json
+  id = params[:id].to_i
+  post = posts.find { |p| p[:id] == id }
+  halt(404, { message: 'Post not found' }.to_json) unless post
+
+  posts.delete(post)
+  status 204
+end
