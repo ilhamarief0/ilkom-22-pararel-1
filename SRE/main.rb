@@ -21,3 +21,14 @@ get '/posts/:id' do
   halt(404, { message: 'Post not found' }.to_json) unless post
   post.to_json
 end
+
+# Membuat post baru
+post '/posts' do
+  content_type :json
+  request_body = JSON.parse(request.body.read)
+  new_id = posts.empty? ? 0 : posts.last[:id] + 1
+  new_post = { id: new_id, title: request_body['title'], body: request_body['body'] }
+  posts << new_post
+  status 201
+  new_post.to_json
+end
