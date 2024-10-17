@@ -32,3 +32,18 @@ post '/posts' do
   status 201
   new_post.to_json
 end
+
+# Mengupdate post berdasarkan ID
+put '/posts/:id' do
+  content_type :json
+  id = params[:id].to_i
+  post = posts.find { |p| p[:id] == id }
+  halt(404, { message: 'Post not found' }.to_json) unless post
+
+  request_body = JSON.parse(request.body.read)
+  post[:title] = request_body['title'] if request_body['title']
+  post[:body] = request_body['body'] if request_body['body']
+
+  post.to_json
+end
+
