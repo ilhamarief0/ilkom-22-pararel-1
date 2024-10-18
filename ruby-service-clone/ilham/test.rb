@@ -11,3 +11,9 @@ get '/posts/:id' do
   id = params[:id].to_i
   return posts[id].to_json
 end
+
+post '/posts' do
+  post = JSON.parse(request.body.read)
+  posts << post
+  return posts.to_json
+end

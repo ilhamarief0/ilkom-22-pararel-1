@@ -7,13 +7,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func main(){
+func main() {
 	router := gin.Default()
 	models.ConnectDatabase()
 
 	router.GET("/api/posts", controllers.Finpost)
 
-	router.POST("/api/post", controllers.StorePost)
+	router.POST("/api/posts", controllers.StorePost)
 
 	router.Run(":3000")
 }
