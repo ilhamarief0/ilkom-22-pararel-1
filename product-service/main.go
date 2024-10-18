@@ -13,5 +13,7 @@ func main(){
 
 	router.GET("/api/posts", controllers.Finpost)
 
+	router.POST("/api/post", controllers.StorePost)
+
 	router.Run(":3000")
 }
