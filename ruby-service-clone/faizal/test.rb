@@ -39,4 +39,15 @@ put '/items/:id' do
   end
 end
 
+# DELETE: Hapus item berdasarkan ID
+delete '/items/:id' do
+  item = Item.find_by(id: params[:id])
+  if item
+    item.destroy
+    { message: 'Item deleted' }.to_json
+  else
+    halt 404, { error: 'Item not found' }.to_json
+  end
+end
+
 
