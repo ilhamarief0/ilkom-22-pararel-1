@@ -11,9 +11,9 @@ func main() {
 	router := gin.Default()
 	models.ConnectDatabase()
 
-	router.GET("/api/posts", controllers.Finpost)
+	router.GET("/api/product", controllers.Findpost)
 
-	router.POST("/api/posts", controllers.StorePost)
+	router.POST("/api/product", controllers.StorePost)
 
 	router.Run(":3000")
 }

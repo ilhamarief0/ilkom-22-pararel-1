@@ -27,13 +27,13 @@ func GetErrorMsg(fe validator.FieldError) string {
 	return "Unknown error"
 }
 
-func Finpost(c *gin.Context) {
+func Findpost(c *gin.Context) {
 	var posts []models.Post
 	models.DB.Find(&posts)
 
 	c.JSON(200, gin.H{
 		"succes":   true,
-		"messaage": "list data posts",
+		"messaage": "list data product",
 		"data":     posts,
 	})
 }
