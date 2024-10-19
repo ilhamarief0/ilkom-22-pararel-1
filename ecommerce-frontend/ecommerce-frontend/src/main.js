@@ -1,4 +1,6 @@
-import { createApp } from 'vue'
-import App from './App.vue'
+import { createApp } from "vue";
+import PaymentForm from "./components/Payment.vue"; // Komponen PaymentForm
 
-createApp(App).mount('#app')
+const app = createApp(PaymentForm);
+
+app.mount("#app");

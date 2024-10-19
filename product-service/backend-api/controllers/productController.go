@@ -28,7 +28,7 @@ func GetErrorMsg(fe validator.FieldError) string {
 }
 
 func Findpost(c *gin.Context) {
-	var posts []models.Post
+	var posts []models.Product
 	models.DB.Find(&posts)
 
 	c.JSON(200, gin.H{
@@ -51,7 +51,7 @@ func StorePost(c *gin.Context) {
 		}
 		return
 	}
-	post := models.Post{
+	post := models.Product{
 		Title:   input.Title,
 		Content: input.Content,
 	}

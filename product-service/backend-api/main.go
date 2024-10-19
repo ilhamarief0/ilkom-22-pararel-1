@@ -10,19 +10,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var jwtKey = []byte("pass1234") // Pastikan key ini sama dengan yang ada di auth service
+var jwtKey = []byte("pass1234")
 
 type Claims struct {
 	Username string `json:"username"`
 	jwt.StandardClaims
 }
 
-// Middleware untuk memvalidasi token
 func validateTokenMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 
-		// Pastikan authHeader memiliki prefix "Bearer "
 		if len(authHeader) < 7 || authHeader[:7] != "Bearer " {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is missing or malformed"})
 			c.Abort()
