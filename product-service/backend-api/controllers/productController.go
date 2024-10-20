@@ -38,7 +38,7 @@ func Findpost(c *gin.Context) {
 	})
 }
 
-func StorePost(c *gin.Context) {
+func AddPost(c *gin.Context) {
 	var input ValidatePostInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		var ve validator.ValidationErrors
@@ -59,6 +59,35 @@ func StorePost(c *gin.Context) {
 	c.JSON(201, gin.H{
 		"succes":  true,
 		"message": "post Created succesfully",
+		"data":    post,
+	})
+}
+
+func EditPost(c *gin.Context){
+	var post models.Post
+	if err := models.DB.Where("id = ?", c.Param("id")).First(&post).Error; err != nil{
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
+		return
+	}
+	//validate input
+	var input ValidatePostInput
+	if err := c.ShouldBindJSON(&input);err != nil{
+		var ve validator.ValidationErrors
+		if errors.As(err,&ve){
+			out := make ([]ErrorMsg, len(ve))
+			for i , fe := range ve {
+				out[i] = ErrorMsg{fe.Field(), GetErrorMsg(fe)}
+			}
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"errors": out})
+		}
+		return
+	}
+	//edit post
+	models.DB.Model(&post).Updates(input)
+
+	c.JSON(200, gin.H{
+		"success": true,
+		"message": "Post Updated Successfully",
 		"data":    post,
 	})
 }
