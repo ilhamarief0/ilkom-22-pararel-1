@@ -27,7 +27,7 @@ func GetErrorMsg(fe validator.FieldError) string {
 	return "Unknown error"
 }
 
-func Findpost(c *gin.Context) {
+func FindProduct(c *gin.Context) {
 	var posts []models.Post
 	models.DB.Find(&posts)
 
@@ -38,7 +38,7 @@ func Findpost(c *gin.Context) {
 	})
 }
 
-func AddPost(c *gin.Context) {
+func AddProduct(c *gin.Context) {
 	var input ValidatePostInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		var ve validator.ValidationErrors
@@ -63,7 +63,7 @@ func AddPost(c *gin.Context) {
 	})
 }
 
-func EditPost(c *gin.Context){
+func EditProduct(c *gin.Context){
 	var post models.Post
 	if err := models.DB.Where("id = ?", c.Param("id")).First(&post).Error; err != nil{
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})

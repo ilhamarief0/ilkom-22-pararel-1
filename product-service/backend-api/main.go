@@ -59,9 +59,9 @@ func main() {
 	protected := router.Group("/api/product")
 	protected.Use(validateTokenMiddleware())
 	{
-		protected.GET("", controllers.Findpost)
-		protected.POST("", controllers.AddPost)
-		protected.PUT("", controllers.EditPost)
+		protected.GET("", controllers.FindProduct)
+		protected.POST("", controllers.AddProduct)
+		protected.PUT("", controllers.EditProduct)
 	}
 
 	router.Run(":3000")
