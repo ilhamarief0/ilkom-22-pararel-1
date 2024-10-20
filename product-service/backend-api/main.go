@@ -60,8 +60,10 @@ func main() {
 	protected.Use(validateTokenMiddleware())
 	{
 		protected.GET("", controllers.Findpost)
-		protected.POST("", controllers.StorePost)
+		protected.POST("", controllers.AddPost)
+		protected.PUT("", controllers.EditPost)
 	}
 
 	router.Run(":3000")
 }
+ 

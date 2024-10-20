@@ -12,7 +12,7 @@ func ConnectDatabase() {
 	if err != nil {
 		panic("Failed To Connect Database")
 	}
-	database.AutoMigrate(&Product{})
+	database.AutoMigrate(&Post{})
 
 	DB = database
 }
