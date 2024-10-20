@@ -1,19 +1,28 @@
 require 'sinatra'
 require 'json'
 
-items = [] 
-
+# CREATE: Tambah item baru
 post '/items' do
-  data = JSON.parse(request.body.read) # Parsing JSON dari body permintaan
-  item = { name: data['name'], quantity: data['quantity'] } # Buat item baru sebagai hash
+    data = JSON.parse(request.body.read)
+    item = Item.new(name: data['name'], quantity: data['quantity'])
+    if item.save
+      item.to_json
+    else
+      halt 422, item.errors.full_messages.to_json
+    end
+  end
 
-  items << item # Tambahkan item ke array items
-  status 201 # Kode status untuk "Created"
-  item.to_json # Kembalikan item yang disimpan dalam format JSON
-end
-
+# READ: Dapatkan semua item
 get '/items' do
-  content_type :json
-  items.to_json # Kembalikan semua item dalam format JSON
+  Item.all.to_json
 end
- 
+
+# READ: Dapatkan item berdasarkan ID
+get '/items/:id' do
+  item = Item.find_by(id: params[:id])
+  if item
+    item.to_json
+  else
+    halt 404, { error: 'Item not found' }.to_json
+  end
+end
