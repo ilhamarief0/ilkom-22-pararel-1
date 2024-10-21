@@ -10,6 +10,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var jwtKey = []byte("pass1234")
@@ -25,6 +26,7 @@ type Claims struct {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
+	// Decode credentials dari request body
 	var creds Credentials
 	err := json.NewDecoder(r.Body).Decode(&creds)
 	if err != nil {
@@ -32,12 +34,24 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Misalnya validasi sederhana username dan password (dummy data)
-	if creds.Username != "user" || creds.Password != "password" {
+	// Cari user berdasarkan username dari database
+	var user models.User
+	err = db.DB.QueryRow("SELECT username, password FROM users WHERE username = ?", creds.Username).Scan(&user.Username, &user.Password)
+	if err != nil {
+		// Jika user tidak ditemukan, kembalikan unauthorized
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
+	// Verifikasi password yang diberikan dengan yang ada di database (hash password)
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password))
+	if err != nil {
+		// Jika password tidak cocok, kembalikan unauthorized
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Jika validasi username dan password berhasil, buat token JWT
 	expirationTime := time.Now().Add(15 * time.Minute)
 	claims := &Claims{
 		Username: creds.Username,
@@ -46,6 +60,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
+	// Tanda tangani token dengan kunci rahasia
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
@@ -53,6 +68,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Kembalikan token sebagai respons
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
 }
 
