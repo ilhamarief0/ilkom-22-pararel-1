@@ -101,6 +101,7 @@ func AddProduct(c *gin.Context) {
 	})
 }
 
+
 func EditProduct(c *gin.Context) {
 	// Mendapatkan product berdasarkan id
 	var product models.Product
