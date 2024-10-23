@@ -66,10 +66,8 @@ func jwtMiddleware(next http.Handler, unprotectedRoutes []string) http.Handler {
 
 func main() {
 	serviceMap := map[string]string{
-		"/api/products":   "http://localhost:3001",
-		"/api/orders":     "http://localhost:3002",
-		"/api/users":      "http://localhost:3003",
 		"/api/product":    "http://localhost:3010",
+		"/api/product:id": "http://localhost:3010/:id",
 		"/api/auth/login": "http://localhost:3012",
 	}
 
@@ -77,16 +75,18 @@ func main() {
 
 	handler := http.NewServeMux()
 	handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Received request: %s %s", r.Method, r.URL.Path) // Log incoming requests
+
 		for path, target := range serviceMap {
 			if strings.HasPrefix(r.URL.Path, path) {
+				log.Printf("Proxying to: %s", target) // Log the target for proxying
 				proxyHandler(target).ServeHTTP(w, r)
 				return
 			}
 		}
-		http.NotFound(w, r)
+		http.NotFound(w, r) // Send 404 if no routes match
 	})
 
-	// Start server with conditional JWT middleware
 	log.Println("Starting server at :3000")
 	if err := http.ListenAndServe(":3000", jwtMiddleware(handler, unprotectedRoutes)); err != nil {
 		log.Fatalf("Could not start server: %s\n", err.Error())
