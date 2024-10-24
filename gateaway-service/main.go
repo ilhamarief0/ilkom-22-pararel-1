@@ -17,7 +17,7 @@ var jwtSecret = []byte("pass1234") // Secret key for signing JWTs
 func proxyHandler(target string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set CORS headers
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8080") // Allow your frontend address
+		w.Header().Set("Access-Control-Allow-Origin", "*") // Allow your frontend address
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 
@@ -37,6 +37,7 @@ func proxyHandler(target string) http.HandlerFunc {
 }
 
 // Function to validate JWTs
+// Function to validate JWTs
 func validateJWT(tokenString string) (*jwt.Token, error) {
 	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -49,6 +50,16 @@ func validateJWT(tokenString string) (*jwt.Token, error) {
 // JWT Middleware for protected routes
 func jwtMiddleware(next http.Handler, unprotectedRoutes []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*") // Allow all origins (or specify your frontend origin)
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+
+		// Handle preflight requests
+		if r.Method == http.MethodOptions {
+			return // End preflight request
+		}
+
 		// Bypass JWT Validation for specific unprotected routes
 		for _, route := range unprotectedRoutes {
 			if strings.HasPrefix(r.URL.Path, route) {
@@ -63,7 +74,7 @@ func jwtMiddleware(next http.Handler, unprotectedRoutes []string) http.Handler {
 			return
 		}
 
-		tokenString := strings.TrimSpace(strings.Replace(authHeader, "Bearer", "", 1))
+		tokenString := strings.TrimSpace(strings.Replace(authHeader, "Bearer ", "", 1))
 		token, err := validateJWT(tokenString)
 		if err != nil || !token.Valid {
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
@@ -76,9 +87,10 @@ func jwtMiddleware(next http.Handler, unprotectedRoutes []string) http.Handler {
 
 func main() {
 	serviceMap := map[string]string{
-		"/api/product":    "http://localhost:3010",
-		"/api/product:id": "http://localhost:3010/:id",
-		"/api/auth/login": "http://localhost:3012",
+		"/api/product":       "http://localhost:3010",
+		"/api/gamberproduct": "http://localhost:3010",
+		"/api/product:id":    "http://localhost:3010/:id",
+		"/api/auth/login":    "http://localhost:3012",
 	}
 
 	unprotectedRoutes := []string{"/api/auth/login"}

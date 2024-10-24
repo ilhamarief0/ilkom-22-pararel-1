@@ -26,8 +26,12 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem("jwt_token");
 
-  // Jika route membutuhkan otentikasi
-  if (to.matched.some((record) => record.meta.requiresAuth)) {
+  // Jika user sudah login dan mencoba akses halaman login
+  if (token && to.name === "UserLogin") {
+    // Redirect ke halaman dashboard jika sudah login
+    next({ name: "UserDashboard" });
+  } else if (to.matched.some((record) => record.meta.requiresAuth)) {
+    // Jika route membutuhkan otentikasi
     if (token) {
       // Jika ada token, lanjutkan ke route yang diminta
       next();
