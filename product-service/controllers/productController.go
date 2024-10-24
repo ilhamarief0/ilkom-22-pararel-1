@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"product_service/backend-api/models"
+	"product_service/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -100,7 +100,6 @@ func AddProduct(c *gin.Context) {
 		"data":    product,
 	})
 }
-
 
 func EditProduct(c *gin.Context) {
 	// Mendapatkan product berdasarkan id

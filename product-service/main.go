@@ -1,8 +1,8 @@
 package main
 
 import (
-	"product_service/backend-api/controllers"
-	"product_service/backend-api/models"
+	"product_service/controllers"
+	"product_service/models"
 
 	"github.com/gin-gonic/gin"
 )

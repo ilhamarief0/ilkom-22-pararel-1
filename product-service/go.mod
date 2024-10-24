@@ -1,4 +1,4 @@
-module product_service/backend-api
+module product_service
 
 go 1.23.1
 

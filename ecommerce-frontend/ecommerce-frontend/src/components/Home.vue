@@ -10,7 +10,7 @@
         class="border rounded-lg shadow-lg bg-white overflow-hidden p-2"
       >
         <img 
-          :src="'http://localhost:3000/api/gambarproduk/' + product.image" 
+          :src="`http://localhost:3010/api/gambarproduk/${product.image}`" 
           alt="Product Image" 
           class="w-full h-48 object-cover mb-2"
         />
