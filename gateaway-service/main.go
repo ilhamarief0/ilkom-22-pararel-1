@@ -16,6 +16,16 @@ var jwtSecret = []byte("pass1234") // Secret key for signing JWTs
 // Function for proxying requests
 func proxyHandler(target string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8080") // Allow your frontend address
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+
+		// Handle preflight requests
+		if r.Method == http.MethodOptions {
+			return // End the preflight request here
+		}
+
 		url, _ := url.Parse(target)
 		proxy := httputil.NewSingleHostReverseProxy(url)
 		r.URL.Host = url.Host
