@@ -87,10 +87,10 @@ func jwtMiddleware(next http.Handler, unprotectedRoutes []string) http.Handler {
 
 func main() {
 	serviceMap := map[string]string{
-		"/api/product":       "http://localhost:3010",
-		"/api/gamberproduct": "http://localhost:3010",
-		"/api/product:id":    "http://localhost:3010/:id",
-		"/api/auth/login":    "http://localhost:3012",
+		"/api/product":      "http://localhost:3010",
+		"/api/gambarproduk": "http://localhost:3010",
+		"/api/product:id":   "http://localhost:3010/:id",
+		"/api/auth/login":   "http://localhost:3012",
 	}
 
 	unprotectedRoutes := []string{"/api/auth/login"}

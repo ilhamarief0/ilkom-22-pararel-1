@@ -17,6 +17,7 @@
         <div class="p-2">
           <h2 class="text-lg font-semibold text-gray-800">{{ product.title }}</h2>
           <p class="text-gray-600 text-sm mb-2">{{ product.content }}</p>
+          <h2 class="text-lg font-semibold text-gray-800">Rp. {{ product.Price }}</h2>
           <button class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">
             Add to Cart
           </button>
