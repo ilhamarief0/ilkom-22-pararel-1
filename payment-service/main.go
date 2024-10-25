@@ -1,118 +1,67 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
-	"time"
 
-	"github.com/gin-contrib/cors" // Using gin-contrib/cors
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/veritrans/go-midtrans"
 )
 
-type Payment struct {
-	ProductName string  `json:"productName" binding:"required"`
-	UserID      int     `json:"userId" binding:"required"`
-	Quantity    int     `json:"quantity" binding:"required"`
-	TotalPrice  float64 `json:"totalPrice" binding:"required"`
-	Status      string  `json:"status"`
-}
-
-var db *sql.DB
-
 func main() {
-	var err error
-	// Connect to MySQL database
-	dsn := "root:@tcp(127.0.0.1:3306)/ecommerce"
-	db, err = sql.Open("mysql", dsn)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
-	// Initialize Gin router
 	r := gin.Default()
 
-	// Allow CORS
-	r.Use(cors.Default())
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:8081"}, // Pastikan port sesuai dengan frontend
+		AllowMethods:     []string{"POST", "GET", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 
-	// Routes
-	r.POST("/payments", createPayment)
-	r.GET("/payments/:userId", getPaymentsByUser) // New route to get payments by user ID
+	r.POST("/payment", func(c *gin.Context) {
+		var req struct {
+			OrderID     string `json:"order_id"`
+			GrossAmount int64  `json:"gross_amount"`
+		}
 
-	// Start the server
-	r.Run(":8085")
-}
-
-// createPayment handles new payments/orders
-func createPayment(c *gin.Context) {
-	var newPayment Payment
-
-	// Parse JSON request body into the Payment struct
-	if err := c.ShouldBindJSON(&newPayment); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payment data"})
-		return
-	}
-
-	// Set default status if not provided
-	if newPayment.Status == "" {
-		newPayment.Status = "waiting for payment"
-	}
-
-	// Insert the payment data into the database
-	query := `INSERT INTO payments (product_name, user_id, quantity, total_price, status, created_at)
-		VALUES (?, ?, ?, ?, ?, ?)`
-	_, err := db.Exec(query, newPayment.ProductName, newPayment.UserID, newPayment.Quantity, newPayment.TotalPrice, newPayment.Status, time.Now())
-
-	if err != nil {
-		log.Println("Error inserting payment:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create payment"})
-		return
-	}
-
-	// Return a success response
-	c.JSON(http.StatusOK, gin.H{
-		"message":     "Payment created successfully",
-		"productName": newPayment.ProductName,
-		"userId":      newPayment.UserID,
-		"quantity":    newPayment.Quantity,
-		"totalPrice":  newPayment.TotalPrice,
-		"status":      newPayment.Status,
-	})
-}
-
-func getPaymentsByUser(c *gin.Context) {
-	userID := c.Param("userId")
-
-	// Query to select payments based on the userId
-	query := `SELECT product_name, quantity, total_price, status FROM payments WHERE user_id = ?`
-
-	rows, err := db.Query(query, userID)
-	if err != nil {
-		log.Println("Error querying payments:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve payments"})
-		return
-	}
-	defer rows.Close()
-
-	var payments []Payment
-	for rows.Next() {
-		var payment Payment
-		if err := rows.Scan(&payment.ProductName, &payment.Quantity, &payment.TotalPrice, &payment.Status); err != nil {
-			log.Println("Error scanning payment:", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve payments"})
+		// Bind request JSON ke struct dan validasi
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 			return
 		}
-		payments = append(payments, payment)
-	}
 
-	if err = rows.Err(); err != nil {
-		log.Println("Error iterating over payment rows:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve payments"})
-		return
-	}
+		snapGateway := midtrans.SnapGateway{
+			Client: midtrans.Client{
+				ServerKey:  "SB-Mid-server-Dh8ojLkmziWFkCqiJGiDAkq0", // Pastikan ini adalah Server Key Sandbox
+				ClientKey:  "SB-Mid-client-etaFzjV97U45y5La",
+				APIEnvType: midtrans.Sandbox, // Gunakan midtrans.Production untuk production
+			},
+		}
 
-	// Return payments as JSON
-	c.JSON(http.StatusOK, payments)
+		snapReq := &midtrans.SnapReq{
+			TransactionDetails: midtrans.TransactionDetails{
+				OrderID:  req.OrderID,
+				GrossAmt: req.GrossAmount,
+			},
+		}
+
+		snapResp, err := snapGateway.GetToken(snapReq)
+		if err != nil {
+			log.Printf("Failed to create transaction: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create transaction"})
+			return
+		}
+
+		// Log untuk memastikan URL yang dikirim benar
+		log.Printf("Redirect URL dari Midtrans: %s", snapResp.RedirectURL)
+
+		// Kirim URL ke frontend
+		c.JSON(http.StatusOK, gin.H{"redirect_url": snapResp.RedirectURL})
+
+	})
+
+	// Jalankan server di port 8080
+	r.Run(":8080")
 }
