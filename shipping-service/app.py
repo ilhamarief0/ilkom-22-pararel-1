@@ -27,6 +27,9 @@ class Shipment(db.Model):
     receiver_name = db.Column(db.String(100), nullable=False)
     sender_name = db.Column(db.String(100), nullable=False)
     address = db.Column(db.String(200), nullable=False)
+    status = db.Column(db.String(50), nullable=True, server_default="pending")
+
+
 
     def __repr__(self):
         return f'<Shipment {self.id}>'
@@ -71,6 +74,63 @@ def detailshipments():
 
         cursor.close()  # Pastikan close sebelum return
         return jsonify(data)
+    
+@app.route('/add_shipments', methods=['POST'])
+def add_shipments():
+    data = request.get_json()
+    order_id = data.get('order_id')
+    receiver_name = data.get('receiver_name')
+    sender_name = data.get('sender_name')
+    address = data.get('address')
+    status = data.get('status', 'pending')  # default value if not provided
+
+    cursor = mysql.connection.cursor()
+    sql = """
+    INSERT INTO shipments (order_id, receiver_name, sender_name, address, status)
+    VALUES (%s, %s, %s, %s, %s)
+    """
+    val = (order_id, receiver_name, sender_name, address, status)
+    cursor.execute(sql, val)
+    mysql.connection.commit()
+    cursor.close()
+
+    return jsonify({"message": "Shipping record added successfully!"}), 201
+
+@app.route('/edit_shipments/<int:id>', methods=['UPDATE'])
+def edit_shipments(id):
+    data = request.get_json()
+    order_id = data.get('order_id')
+    receiver_name = data.get('receiver_name')
+    sender_name = data.get('sender_name')
+    address = data.get('address')
+    status = data.get('status')
+
+    cursor = mysql.connection.cursor()
+    sql = """
+    EDIT shipments 
+    SET order_id = %s, receiver_name = %s, sender_name = %s, address = %s, status = %s
+    WHERE id = %s
+    """
+    val = (order_id, receiver_name, sender_name, address, status, id)
+    cursor.execute(sql, val)
+    mysql.connection.commit()
+    cursor.close()
+
+    return jsonify({"message": "Shipping record updated successfully!"}), 200
+
+@app.route('/delete_shipping/<int:id>', methods=['DELETE'])
+def delete_shipping(id):
+    cursor = mysql.connection.cursor()
+    sql = "DELETE FROM shipments WHERE id = %s"
+    val = (id,)
+    cursor.execute(sql, val)
+    mysql.connection.commit()
+    cursor.close()
+
+    return jsonify({"message": "Shipping record deleted successfully!"}), 200
+
+
+
 
 # Create the database tables in the application context
 def create_tables():
