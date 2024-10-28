@@ -23,7 +23,7 @@ func main() {
 
 	// Set up CORS handler
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"}, // Izinkan origin ini
+		AllowedOrigins:   []string{"http://localhost:4000"}, // Izinkan origin ini
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
