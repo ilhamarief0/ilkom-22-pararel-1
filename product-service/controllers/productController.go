@@ -43,6 +43,7 @@ func FindProduct(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
+		"status":  http.StatusOK,
 		"message": "List of products",
 		"data":    products,
 	})
