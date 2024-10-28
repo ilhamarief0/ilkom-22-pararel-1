@@ -1,4 +1,5 @@
 from sqlalchemy import column,integer,string,float
+from MySQLdb import column,integer,string,float
 from database import Base
 
 class Shipping(Base):
