@@ -109,8 +109,8 @@ func main() {
 		http.NotFound(w, r) // Send 404 if no routes match
 	})
 
-	log.Println("Starting server at :3000")
-	if err := http.ListenAndServe(":3000", jwtMiddleware(handler, unprotectedRoutes)); err != nil {
+	log.Println("Starting server at :4000")
+	if err := http.ListenAndServe(":4000", jwtMiddleware(handler, unprotectedRoutes)); err != nil {
 		log.Fatalf("Could not start server: %s\n", err.Error())
 	}
 }
