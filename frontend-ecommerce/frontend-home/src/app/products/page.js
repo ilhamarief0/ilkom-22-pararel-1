@@ -1,4 +1,3 @@
-// app/products/page.js
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,6 +7,7 @@ import { API_BASE_URL } from "../../../config";
 export default function ProductList() {
   const [products, setProducts] = useState([]);
   const [error, setError] = useState("");
+  const [imageUrls, setImageUrls] = useState({});
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -33,21 +33,46 @@ export default function ProductList() {
         const data = await res.json();
 
         if (data.success && Array.isArray(data.data)) {
-          setProducts(data.data); // Assuming 'data' contains an array of products
+          setProducts(data.data);
         } else if (data.success) {
           setProducts([data.data]);
         } else {
           throw new Error("Unexpected response format");
         }
 
-        // Log product image URLs
-        data.data.forEach((product) => {
-          console.log(`${API_BASE_URL}/api/gambarproduk/${product.image}`);
-        });
+        fetchImages(data.data, token);
       } catch (err) {
         console.error(err);
         setError("Error fetching products: " + err.message);
       }
+    };
+
+
+    const fetchImages = async (products, token) => {
+      const urls = {};
+      for (let product of products) {
+        try {
+          const imageRes = await fetch(
+            `${API_BASE_URL}/api/gambarproduk/${product.image}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (imageRes.ok) {
+            urls[
+              product.id
+            ] = `${API_BASE_URL}/api/gambarproduk/${product.image}`;
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+      setImageUrls(urls);
     };
 
     fetchProducts();
@@ -61,11 +86,15 @@ export default function ProductList() {
         {products.map((product) => (
           <div key={product.id} className="col-md-3 mb-4">
             <div className="card h-100">
-              <img
-                src={`${API_BASE_URL}/api/gambarproduk/${product.image}`} // Construct the correct URL for the image
-                className="card-img-top"
-                alt={product.title} // Updated alt text
-              />
+              {imageUrls[product.id] ? (
+                <img
+                  src={imageUrls[product.id]}
+                  className="card-img-top"
+                  alt={product.title}
+                />
+              ) : (
+                <div className="placeholder-image">Image not available</div>
+              )}
 
               <div className="card-body">
                 <h5 className="card-title">{product.title}</h5>
