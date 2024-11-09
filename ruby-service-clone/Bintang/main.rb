@@ -30,7 +30,7 @@ put '/items/:id' do
   item = Item.find_by(id: params[:id])
   if item
     data = JSON.parse(request.body.read)
-    item.update(name: data['name'], quantity: data['quantity'])
+    item.update2(name: data['name'], quantity: data['quantity'])
     item.to_json
   else
     halt 404, { error: 'Item not found' }.to_json
