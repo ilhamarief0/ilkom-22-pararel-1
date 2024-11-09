@@ -16,6 +16,11 @@ get '/items' do
   Item.all.to_json
 end
 
+# READ: Dapatkan semua item
+get '/items' do
+  Item.all.to_json
+end
+
 # READ: Dapatkan item berdasarkan ID
 get '/items/:id' do
   item = Item.find_by(id: params[:id])
