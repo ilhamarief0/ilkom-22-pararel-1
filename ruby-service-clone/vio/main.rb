@@ -11,6 +11,10 @@ post '/items' do
       halt 422, item.errors.full_messages.to_json
     end
   end
+  # READ: Dapatkan semua item
+get '/items' do
+  Item.all.to_json
+end
 
 # READ: Dapatkan semua item
 get '/items' do
@@ -25,6 +29,7 @@ get '/items/:id' do
   else
     halt 404, { error: 'Item not found' }.to_json
 end
+
 # UPDATE: Perbarui item berdasarkan ID
 put '/items/:id' do
   item = Item.find_by(id: params[:id])
@@ -36,4 +41,3 @@ put '/items/:id' do
     halt 404, { error: 'Item not found' }.to_json
   end
 end
-
