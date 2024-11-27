@@ -12,7 +12,7 @@ var DB *sql.DB
 func Init() {
 	var err error
 	// Ubah `username`, `password`, `dbname`, dan `localhost` sesuai dengan konfigurasi MySQL Anda
-	DB, err = sql.Open("mysql", "root:@tcp(localhost:3306)/ecommerce")
+	DB, err = sql.Open("mysql", "root:111999@tcp(localhost:3306)/ecommerce")
 	if err != nil {
 		log.Fatal(err)
 	}

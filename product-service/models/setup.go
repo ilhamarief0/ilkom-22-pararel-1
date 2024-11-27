@@ -8,7 +8,7 @@ import (
 var DB *gorm.DB
 
 func ConnectDatabase() {
-	database, err := gorm.Open(mysql.Open("root:@tcp(127.0.0.1:3306)/ecommerce"), &gorm.Config{})
+	database, err := gorm.Open(mysql.Open("root:111999@tcp(127.0.0.1:3306)/ecommerce"), &gorm.Config{})
 	if err != nil {
 		panic("Failed To Connect Database")
 	}

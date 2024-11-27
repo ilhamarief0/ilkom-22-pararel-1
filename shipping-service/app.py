@@ -130,8 +130,6 @@ def delete_shipping(id):
     return jsonify({"message": "Shipping record deleted successfully!"}), 200
 
 
-
-
 # Create the database tables in the application context
 def create_tables():
     with app.app_context():

@@ -1,7 +1,6 @@
-// app/login/page.js
-"use client"; // Ensure client-side rendering
+"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "../../../config";
 import Swal from "sweetalert2";
@@ -11,6 +10,13 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("jwtToken");
+    if (token) {
+      router.replace("/"); // Redirect to home if logged in
+    }
+  }, [router]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -30,9 +36,8 @@ export default function Login() {
       }
 
       const data = await res.json();
-      localStorage.setItem("jwtToken", data.token); // Store the token
+      localStorage.setItem("jwtToken", data.token);
 
-      // Display success message using SweetAlert2
       Swal.fire({
         icon: "success",
         title: "Login Successful",
@@ -40,11 +45,9 @@ export default function Login() {
         showConfirmButton: false,
         timer: 1500,
       }).then(() => {
-        // Redirect to the products page after success message
-        router.push("/products");
+        router.push("/");
       });
     } catch (error) {
-      // Display error message using SweetAlert2
       Swal.fire({
         icon: "error",
         title: "Login Failed",
@@ -57,7 +60,7 @@ export default function Login() {
 
   return (
     <div className="container py-5">
-      <div className="card mx-auto" style={{ maxWidth: "400px" }}>
+      <div className="card mx-auto" style={{ maxWidth: "700px" }}>
         <div className="card-body">
           <h1 className="text-center mb-4">Login</h1>
           <form onSubmit={handleLogin}>

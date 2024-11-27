@@ -1,0 +1,165 @@
+:root {
+    --background: #ffffff;
+    --foreground: #171717;
+    --card-background: #ffffff;
+    --card-border: #dddddd;
+    --navbar-background: #f8f9fa;
+    --navbar-color: #343a40;
+    --button-background: #007bff;
+    --button-hover-background: #0056b3;
+    --disabled-background: #cccccc;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #0a0a0a;
+        --foreground: #ededed;
+        --card-background: #1d1d1d;
+        --card-border: #333333;
+        --navbar-background: #222;
+        --navbar-color: #ffffff;
+        --button-background: #0056b3;
+        --button-hover-background: #004085;
+        --disabled-background: #666666;
+    }
+}
+
+html,
+body {
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+body {
+    color: var(--foreground);
+    background: var(--background);
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* General container for pages */
+.container {
+    max-width: 1200px;
+    margin: 0 auto; /* Center the container */
+    padding: 20px;
+}
+
+/* Placeholder for loading images */
+.placeholder-image {
+    height: 200px;
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 1.2em;
+}
+
+/* Reset styles for all elements */
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+}
+
+/* Link styles */
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Card styles for products and login forms */
+/* This CSS should be incorporated into your global styles file */
+
+.product-list {
+    display: flex;
+    flex-wrap: wrap; /* Allows cards to wrap to the next line */
+    justify-content: flex-start; /* Aligns items to the left */
+}
+
+.card {
+    background: var(--card-background);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin: 100px; /* Margin between cards */
+    width: 180px; /* Fixed width for product cards */
+    flex: 0 0 auto; /* Prevent flex children from growing */
+    overflow: hidden; /* Prevent content overflow */
+}
+
+.card-img-top {
+    width: 100%; /* Ensures image fills the card */
+    height: 150px; /* Fixed height to maintain card size */
+    object-fit: cover; /* Ensures the image covers the area without stretching */
+}
+
+.placeholder-image {
+    height: 150px; /* Height is consistent with card image */
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 1.2em;
+}
+
+
+
+/* Card body styles */
+.card-body {
+    padding: 20px;
+}
+
+/* Styling for navbar */
+.navbar {
+    background: var(--navbar-background);
+    color: var(--navbar-color);
+    padding: 1rem;
+}
+
+.navbar a {
+    color: var(--navbar-color);
+}
+
+.navbar .navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+/* Button styles */
+.btn {
+    background-color: var(--button-background);
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background-color: var(--button-hover-background);
+}
+
+.btn:disabled {
+    background-color: var(--disabled-background);
+    cursor: not-allowed;
+}
+
+/* Media Queries for responsive design */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0.5rem 1rem;
+    }
+
+    .card {
+        margin-bottom: 15px;
+    }
+
+    .container {
+        padding: 10px;
+    }
+}
+
+
