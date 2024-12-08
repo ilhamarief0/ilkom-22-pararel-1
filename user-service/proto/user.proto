@@ -4,14 +4,14 @@ package proto;
 
 option go_package = "/proto;proto";
 
-// User message
 message User {
     int32 id = 1;
     string username = 2;
     string email = 3;
     string password = 4;
-    int32 role_id = 5;
+    string role = 5; // Nama role
 }
+
 
 // Request and response messages
 message UserRequest {

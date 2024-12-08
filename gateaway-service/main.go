@@ -20,8 +20,9 @@ func main() {
 	r := gin.Default()
 
 	// Register handler
-	userHandler := &handlers.UserHandler{UserService: userServiceClient}
+	userHandler := &handlers.GatewayHandler{UserService: userServiceClient}
 	r.GET("/users/:id", userHandler.GetUser)
+	r.POST("/users", userHandler.CreateUser)
 
 	// Jalankan REST API
 	r.Run(":8080") // REST API berjalan di port 8080

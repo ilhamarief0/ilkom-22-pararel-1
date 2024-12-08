@@ -2,38 +2,54 @@ package handlers
 
 import (
 	"context"
-	"gateway-service/proto"
 	"net/http"
 	"strconv"
+
+	pb "gateway-service/proto"
 
 	"github.com/gin-gonic/gin"
 )
 
-type UserHandler struct {
-	UserService proto.UserServiceClient
+type GatewayHandler struct {
+	UserService pb.UserServiceClient
 }
 
-func (h *UserHandler) GetUser(c *gin.Context) {
-	// Ambil parameter `id` dari URL
+func (h *GatewayHandler) GetUser(c *gin.Context) {
+	// Mendapatkan ID dari parameter URL
 	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := strconv.Atoi(idParam) // Konversi ID dari string ke integer
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
-	// Panggil gRPC GetUser
-	res, err := h.UserService.GetUser(context.Background(), &proto.UserRequest{Id: int32(id)})
+	// Memanggil gRPC GetUser
+	req := &pb.UserRequest{Id: int32(id)}
+	res, err := h.UserService.GetUser(context.Background(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
 		return
 	}
 
-	// Kembalikan response ke klien
-	c.JSON(http.StatusOK, gin.H{
-		"id":       res.User.Id,
-		"username": res.User.Username,
-		"email":    res.User.Email,
-		"role":     res.User.Role,
-	})
+	// Membuat response JSON
+	c.JSON(http.StatusOK, res.User) // Return user dengan role yang sudah disertakan
+}
+
+func (h *GatewayHandler) CreateUser(c *gin.Context) {
+	// Bind JSON request to CreateUserRequest
+	var req pb.CreateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	// Call gRPC CreateUser
+	res, err := h.UserService.CreateUser(context.Background(), &req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
+
+	// Return response
+	c.JSON(http.StatusOK, gin.H{"success": res.Success, "message": res.Message})
 }

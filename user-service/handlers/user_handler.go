@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 
 	pb "user-service/proto"
@@ -12,6 +11,27 @@ import (
 type UserServiceServer struct {
 	DB *sql.DB
 	pb.UnimplementedUserServiceServer
+}
+
+func (s *UserServiceServer) GetUser(ctx context.Context, req *pb.UserRequest) (*pb.UserResponse, error) {
+	var user pb.User
+	query := `
+		SELECT u.id, u.username, u.email, u.password, r.name as role_name
+		FROM users u
+		LEFT JOIN roles r ON u.role_id = r.id
+		WHERE u.id = ?
+	`
+	row := s.DB.QueryRow(query, req.Id)
+
+	var roleName string
+	err := row.Scan(&user.Id, &user.Username, &user.Email, &user.Password, &roleName)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	user.Role = roleName // Assign role name
+	return &pb.UserResponse{User: &user}, nil
 }
 
 // CreateUser handles the creation of a new user.
@@ -30,23 +50,6 @@ func (s *UserServiceServer) CreateUser(ctx context.Context, req *pb.CreateUserRe
 	}
 
 	return &pb.CreateUserResponse{Success: true, Message: "User created successfully"}, nil
-}
-
-// GetUser handles fetching a user by ID.
-func (s *UserServiceServer) GetUser(ctx context.Context, req *pb.UserRequest) (*pb.UserResponse, error) {
-	var user pb.User
-	err := s.DB.QueryRow("SELECT id, username, email, role_id FROM users WHERE id = ?", req.Id).
-		Scan(&user.Id, &user.Username, &user.Email, &user.RoleId)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			log.Printf("User with ID %d not found\n", req.Id)
-			return nil, fmt.Errorf("user not found")
-		}
-		log.Printf("Failed to query user: %v\n", err)
-		return nil, err
-	}
-
-	return &pb.UserResponse{User: &user}, nil
 }
 
 // UpdateUser handles updating an existing user.
