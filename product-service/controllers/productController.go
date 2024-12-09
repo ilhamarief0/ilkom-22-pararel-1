@@ -14,7 +14,10 @@ import (
 type ValidatePostInput struct {
 	Title   string `form:"title" json:"title" binding:"required"`
 	Content string `form:"content" json:"content" binding:"required"`
+	Price   int    `form:"price" json:"price" binding:"required"`
+	Stock   int    `form:"stock" json:"stock" binding:"required"`
 }
+
 type ErrorMsg struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
@@ -30,7 +33,10 @@ func GetErrorMsg(fe validator.FieldError) string {
 
 func FindProduct(c *gin.Context) {
 	var products []models.Product
-	models.DB.Find(&products)
+	if err := models.DB.Find(&products).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve products"})
+		return
+	}
 
 	if len(products) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -50,51 +56,47 @@ func FindProduct(c *gin.Context) {
 }
 
 func AddProduct(c *gin.Context) {
-	// Mengambil data form
 	var input ValidatePostInput
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid form data"})
 		return
 	}
 
-	// Mengambil file gambar dari form-data
 	file, err := c.FormFile("image")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Image file is required"})
 		return
 	}
 
-	// Tentukan folder untuk menyimpan gambar
 	imageFolder := "gambarproduk"
 	if _, err := os.Stat(imageFolder); os.IsNotExist(err) {
-		// Membuat folder jika belum ada
-		os.Mkdir(imageFolder, os.ModePerm)
+		if err := os.Mkdir(imageFolder, os.ModePerm); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create image directory"})
+			return
+		}
 	}
 
-	// Tentukan lokasi penyimpanan gambar
 	filename := filepath.Base(file.Filename)
 	imagePath := filepath.Join(imageFolder, filename)
 
-	// Simpan file gambar ke folder
 	if err := c.SaveUploadedFile(file, imagePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
 		return
 	}
 
-	// Membuat produk baru
 	product := models.Product{
 		Title:   input.Title,
 		Content: input.Content,
-		Image:   filename, // Simpan nama file gambar di database
+		Price:   input.Price,
+		Stock:   input.Stock,
+		Image:   filename,
 	}
 
-	// Simpan data produk ke database
 	if err := models.DB.Create(&product).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create product"})
 		return
 	}
 
-	// Mengembalikan respons sukses
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"message": "Product created successfully",
@@ -103,35 +105,29 @@ func AddProduct(c *gin.Context) {
 }
 
 func EditProduct(c *gin.Context) {
-	// Mendapatkan product berdasarkan id
 	var product models.Product
 	if err := models.DB.Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found!"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
 		return
 	}
 
-	// Mengambil data form
 	var input ValidatePostInput
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid form data"})
 		return
 	}
 
-	// Cek apakah ada file gambar baru yang diunggah
 	file, err := c.FormFile("image")
 	if err == nil {
-		// Tentukan lokasi penyimpanan gambar baru
-		imageFolder := "../gambarproduk"
+		imageFolder := "gambarproduk"
 		filename := filepath.Base(file.Filename)
 		imagePath := filepath.Join(imageFolder, filename)
 
-		// Simpan gambar baru ke folder
 		if err := c.SaveUploadedFile(file, imagePath); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
 			return
 		}
 
-		// Hapus gambar lama jika ada
 		if product.Image != "" {
 			oldImagePath := filepath.Join(imageFolder, product.Image)
 			if err := os.Remove(oldImagePath); err != nil {
@@ -139,21 +135,19 @@ func EditProduct(c *gin.Context) {
 			}
 		}
 
-		// Update nama file gambar di produk
 		product.Image = filename
 	}
 
-	// Update field lain
 	product.Title = input.Title
 	product.Content = input.Content
+	product.Price = input.Price
+	product.Stock = input.Stock
 
-	// Simpan perubahan ke database
 	if err := models.DB.Save(&product).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update product"})
 		return
 	}
 
-	// Mengembalikan respons sukses
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Product updated successfully",
