@@ -16,7 +16,7 @@ func main() {
 	// No JWT validation here, assume the Gateway does that
 	productRoutes := router.Group("/api/product")
 	{
-		productRoutes.GET("", controllers.FindProduct)
+		productRoutes.GET("", controllers.GetallProduct)
 		productRoutes.POST("", controllers.AddProduct)
 		productRoutes.PUT("/:id", controllers.EditProduct)
 	}
