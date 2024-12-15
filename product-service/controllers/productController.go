@@ -31,26 +31,15 @@ func GetErrorMsg(fe validator.FieldError) string {
 	return "Unknown error"
 }
 
-func FindProduct(c *gin.Context) {
+func GetallProduct(c *gin.Context) {
+	//get data from database using model
 	var products []models.Product
-	if err := models.DB.Find(&products).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve products"})
-		return
-	}
-
-	if len(products) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"success": false,
-			"message": "No products found",
-			"data":    products,
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
+	models.DB.Find(&products)
+	
+	//return json
+	c.JSON(200, gin.H{
 		"success": true,
-		"status":  http.StatusOK,
-		"message": "List of products",
+		"message": "List of Product",
 		"data":    products,
 	})
 }
