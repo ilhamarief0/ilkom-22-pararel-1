@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net"
+
 	"user-service/db/migrations"
 	"user-service/handlers"
 	pb "user-service/proto"

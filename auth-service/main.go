@@ -1,35 +1,35 @@
 package main
 
 import (
-	"auth-service/controllers"
-	"auth-service/db"
 	"log"
-	"net/http"
 
-	"github.com/gorilla/mux"
-	"github.com/rs/cors"
+	"auth-service/handlers"
+	pb "auth-service/proto" // Ensure this path matches the go_package
+
+	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
 )
 
 func main() {
-	db.Init() // Initialize database connection
+	// Connect to the user-service gRPC server
+	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Failed to connect to user-service: %v", err)
+	}
+	defer conn.Close()
 
-	// Inisialisasi router
-	r := mux.NewRouter()
+	// Create a new UserService client
+	userServiceClient := pb.NewUserServiceClient(conn)
 
-	// Definisikan route
-	r.HandleFunc("/api/auth/login", controllers.Login).Methods("POST")
-	r.HandleFunc("/user/{id}", controllers.GetUser).Methods("GET")
-	r.HandleFunc("/user", controllers.CreateUser).Methods("POST")
+	// Initialize the AuthHandler with the gRPC client
+	authHandler := handlers.NewAuthHandler(userServiceClient)
 
-	// Set up CORS handler
-	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:4000"}, // Izinkan origin ini
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Authorization", "Content-Type"},
-		AllowCredentials: true,
-	})
+	// Set up the Gin router
+	r := gin.Default()
+	r.POST("/api/login", authHandler.Login)
 
-	// Jalankan server dengan middleware CORS
-	handler := corsHandler.Handler(r)
-	log.Fatal(http.ListenAndServe(":3012", handler))
+	// Start the HTTP server
+	if err := r.Run(":9000"); err != nil {
+		log.Fatalf("Failed to run auth-service: %v", err)
+	}
 }

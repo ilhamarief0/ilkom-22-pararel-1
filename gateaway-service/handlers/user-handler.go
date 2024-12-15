@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -14,25 +15,38 @@ type GatewayHandler struct {
 	UserService pb.UserServiceClient
 }
 
+func (h *GatewayHandler) ListUsers(c *gin.Context) {
+	req := &pb.ListUsersRequest{}
+	res, err := h.UserService.ListUsers(context.Background(), req)
+	if err != nil {
+		log.Printf("Error calling ListUsers gRPC: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list users"})
+		return
+	}
+
+	c.JSON(http.StatusOK, res.Users)
+}
+
 func (h *GatewayHandler) GetUser(c *gin.Context) {
-	// Mendapatkan ID dari parameter URL
+	// Get ID from URL parameter
 	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam) // Konversi ID dari string ke integer
+	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
-	// Memanggil gRPC GetUser
+	// Call gRPC GetUser
 	req := &pb.UserRequest{Id: int32(id)}
 	res, err := h.UserService.GetUser(context.Background(), req)
 	if err != nil {
+		log.Printf("Error calling GetUser: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
 		return
 	}
 
-	// Membuat response JSON
-	c.JSON(http.StatusOK, res.User) // Return user dengan role yang sudah disertakan
+	// Return user as JSON
+	c.JSON(http.StatusOK, res.User)
 }
 
 func (h *GatewayHandler) CreateUser(c *gin.Context) {
@@ -46,6 +60,7 @@ func (h *GatewayHandler) CreateUser(c *gin.Context) {
 	// Call gRPC CreateUser
 	res, err := h.UserService.CreateUser(context.Background(), &req)
 	if err != nil {
+		log.Printf("Error calling CreateUser: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}

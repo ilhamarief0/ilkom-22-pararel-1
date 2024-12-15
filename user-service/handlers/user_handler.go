@@ -6,6 +6,8 @@ import (
 	"log"
 
 	pb "user-service/proto"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserServiceServer struct {
@@ -26,76 +28,89 @@ func (s *UserServiceServer) GetUser(ctx context.Context, req *pb.UserRequest) (*
 	var roleName string
 	err := row.Scan(&user.Id, &user.Username, &user.Email, &user.Password, &roleName)
 	if err != nil {
-		log.Println(err)
+		log.Printf("Error scanning GetUser row: %v", err)
 		return nil, err
 	}
 
-	user.Role = roleName // Assign role name
+	user.Role = roleName
 	return &pb.UserResponse{User: &user}, nil
 }
 
-// CreateUser handles the creation of a new user.
+func (s *UserServiceServer) GetUserByUsername(ctx context.Context, req *pb.GetUserByUsernameRequest) (*pb.GetUserByUsernameResponse, error) {
+	var user pb.User
+	query := `
+		SELECT u.id, u.username, u.email, u.password, r.name as role_name
+		FROM users u
+		LEFT JOIN roles r ON u.role_id = r.id
+		WHERE u.username = ?
+	`
+	row := s.DB.QueryRow(query, req.Username)
+
+	var roleName string
+	err := row.Scan(&user.Id, &user.Username, &user.Email, &user.Password, &roleName)
+	if err != nil {
+		log.Printf("Error scanning GetUserByUsername row: %v", err)
+		return nil, err
+	}
+
+	user.Role = roleName
+	return &pb.GetUserByUsernameResponse{User: &user}, nil
+}
+
+func (s *UserServiceServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
+	query := `
+		SELECT u.id, u.username, u.email, u.password, r.name as role_name
+		FROM users u
+		LEFT JOIN roles r ON u.role_id = r.id
+	`
+	rows, err := s.DB.Query(query)
+	if err != nil {
+		log.Printf("Failed to execute ListUsers query: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*pb.User
+	for rows.Next() {
+		var user pb.User
+		var roleName string
+		err := rows.Scan(&user.Id, &user.Username, &user.Email, &user.Password, &roleName)
+		if err != nil {
+			log.Printf("Failed to scan ListUsers row: %v", err)
+			return nil, err
+		}
+		user.Role = roleName
+		users = append(users, &user)
+	}
+
+	if err = rows.Err(); err != nil {
+		log.Printf("Error encountered during ListUsers row iteration: %v", err)
+		return nil, err
+	}
+
+	log.Printf("Successfully listed %d users", len(users))
+	return &pb.ListUsersResponse{Users: users}, nil
+}
+
 func (s *UserServiceServer) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("Failed to hash password: %v", err)
+		return &pb.CreateUserResponse{Success: false, Message: "Failed to hash password"}, err
+	}
+
 	stmt, err := s.DB.Prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)")
 	if err != nil {
-		log.Printf("Failed to prepare statement: %v\n", err)
+		log.Printf("Failed to prepare CreateUser statement: %v", err)
 		return &pb.CreateUserResponse{Success: false, Message: "Failed to prepare query"}, err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(req.Username, req.Email, req.Password, req.RoleId)
+	_, err = stmt.Exec(req.Username, req.Email, hashedPassword, req.RoleId)
 	if err != nil {
-		log.Printf("Failed to execute query: %v\n", err)
+		log.Printf("Failed to execute CreateUser query: %v", err)
 		return &pb.CreateUserResponse{Success: false, Message: "Failed to create user"}, err
 	}
 
 	return &pb.CreateUserResponse{Success: true, Message: "User created successfully"}, nil
-}
-
-// UpdateUser handles updating an existing user.
-func (s *UserServiceServer) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
-	stmt, err := s.DB.Prepare("UPDATE users SET username = ?, email = ?, password = ?, role_id = ? WHERE id = ?")
-	if err != nil {
-		log.Printf("Failed to prepare statement: %v\n", err)
-		return &pb.UpdateUserResponse{Success: false, Message: "Failed to prepare query"}, err
-	}
-	defer stmt.Close()
-
-	res, err := stmt.Exec(req.Username, req.Email, req.Password, req.RoleId, req.Id)
-	if err != nil {
-		log.Printf("Failed to execute query: %v\n", err)
-		return &pb.UpdateUserResponse{Success: false, Message: "Failed to update user"}, err
-	}
-
-	rowsAffected, _ := res.RowsAffected()
-	if rowsAffected == 0 {
-		log.Printf("No user found with ID %d to update\n", req.Id)
-		return &pb.UpdateUserResponse{Success: false, Message: "User not found"}, nil
-	}
-
-	return &pb.UpdateUserResponse{Success: true, Message: "User updated successfully"}, nil
-}
-
-// DeleteUser handles deleting a user by ID.
-func (s *UserServiceServer) DeleteUser(ctx context.Context, req *pb.UserRequest) (*pb.DeleteUserResponse, error) {
-	stmt, err := s.DB.Prepare("DELETE FROM users WHERE id = ?")
-	if err != nil {
-		log.Printf("Failed to prepare statement: %v\n", err)
-		return &pb.DeleteUserResponse{Success: false, Message: "Failed to prepare query"}, err
-	}
-	defer stmt.Close()
-
-	res, err := stmt.Exec(req.Id)
-	if err != nil {
-		log.Printf("Failed to execute query: %v\n", err)
-		return &pb.DeleteUserResponse{Success: false, Message: "Failed to delete user"}, err
-	}
-
-	rowsAffected, _ := res.RowsAffected()
-	if rowsAffected == 0 {
-		log.Printf("No user found with ID %d to delete\n", req.Id)
-		return &pb.DeleteUserResponse{Success: false, Message: "User not found"}, nil
-	}
-
-	return &pb.DeleteUserResponse{Success: true, Message: "User deleted successfully"}, nil
 }

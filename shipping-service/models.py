@@ -13,11 +13,6 @@ class Shipping(Base):
     status = column (string(50), nullable=True, server_default="pending")
 
 
-
-
-
-
-
     #id = column (integer,primary_key=True, index=True)
     #Shipping_id = column(string,unique=True,index=True)
     #destination = column(string)

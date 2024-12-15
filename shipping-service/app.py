@@ -29,8 +29,6 @@ class Shipment(db.Model):
     address = db.Column(db.String(200), nullable=False)
     status = db.Column(db.String(50), nullable=True, server_default="pending")
 
-
-
     def __repr__(self):
         return f'<Shipment {self.id}>'
 
