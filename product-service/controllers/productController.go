@@ -5,22 +5,22 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"product_service/models"
+	"product_service/models" // Import models package
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 )
+
+type ProductController struct {
+	DB *gorm.DB
+}
 
 type ValidatePostInput struct {
 	Title   string `form:"title" json:"title" binding:"required"`
 	Content string `form:"content" json:"content" binding:"required"`
 	Price   int    `form:"price" json:"price" binding:"required"`
 	Stock   int    `form:"stock" json:"stock" binding:"required"`
-}
-
-type ErrorMsg struct {
-	Field   string `json:"field"`
-	Message string `json:"message"`
 }
 
 func GetErrorMsg(fe validator.FieldError) string {
@@ -31,20 +31,33 @@ func GetErrorMsg(fe validator.FieldError) string {
 	return "Unknown error"
 }
 
-func GetallProduct(c *gin.Context) {
-	//get data from database using model
-	var products []models.Product
-	models.DB.Find(&products)
-	
-	//return json
-	c.JSON(200, gin.H{
+func (pc *ProductController) GetAllProducts(c *gin.Context) {
+	// Define the query to fetch product and user information
+	query := `
+		SELECT p.id, p.title, p.content, p.price, p.stock, p.image, u.username
+		FROM product p
+		LEFT JOIN users u ON p.user_id = u.id
+	`
+
+	// Declare a slice to hold the result inline
+	var products []models.ProductWithUser
+
+	// Execute the query and directly scan into the products slice
+	if err := pc.DB.Raw(query).Scan(&products).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve products"})
+		return
+	}
+
+	// Return the result in JSON format directly
+	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "List of Product",
+		"message": "List of Products",
 		"data":    products,
 	})
 }
 
-func AddProduct(c *gin.Context) {
+// Handler for adding a new product
+func (pc *ProductController) AddProduct(c *gin.Context) {
 	var input ValidatePostInput
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid form data"})
@@ -67,7 +80,6 @@ func AddProduct(c *gin.Context) {
 
 	filename := filepath.Base(file.Filename)
 	imagePath := filepath.Join(imageFolder, filename)
-
 	if err := c.SaveUploadedFile(file, imagePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
 		return
@@ -81,7 +93,7 @@ func AddProduct(c *gin.Context) {
 		Image:   filename,
 	}
 
-	if err := models.DB.Create(&product).Error; err != nil {
+	if err := pc.DB.Create(&product).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create product"})
 		return
 	}
@@ -93,9 +105,10 @@ func AddProduct(c *gin.Context) {
 	})
 }
 
-func EditProduct(c *gin.Context) {
+// Handler for editing a product
+func (pc *ProductController) EditProduct(c *gin.Context) {
 	var product models.Product
-	if err := models.DB.Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
+	if err := pc.DB.Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
 		return
 	}
@@ -117,6 +130,7 @@ func EditProduct(c *gin.Context) {
 			return
 		}
 
+		// Delete old image
 		if product.Image != "" {
 			oldImagePath := filepath.Join(imageFolder, product.Image)
 			if err := os.Remove(oldImagePath); err != nil {
@@ -132,7 +146,7 @@ func EditProduct(c *gin.Context) {
 	product.Price = input.Price
 	product.Stock = input.Stock
 
-	if err := models.DB.Save(&product).Error; err != nil {
+	if err := pc.DB.Save(&product).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update product"})
 		return
 	}

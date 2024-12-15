@@ -61,8 +61,11 @@ func main() {
 
 	// Proxy POST requests to the product service
 	productServiceURL := "http://localhost:3010"
-	r.POST("/api/product", func(c *gin.Context) {
-		proxyToService(c, productServiceURL, "/api/product")
+	r.POST("/api/products", func(c *gin.Context) {
+		proxyToService(c, productServiceURL, "/api/products")
+	})
+	r.GET("/api/products", authMiddleware, func(c *gin.Context) {
+		proxyToService(c, productServiceURL, "/api/products")
 	})
 
 	// Proxy POST requests to the auth service
