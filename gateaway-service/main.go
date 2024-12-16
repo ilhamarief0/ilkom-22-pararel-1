@@ -55,9 +55,11 @@ func main() {
 
 	// Register user handlers with JWT middleware
 	userHandler := &handlers.GatewayHandler{UserService: userServiceClient}
-	r.GET("/users", authMiddleware, userHandler.ListUsers)
-	r.GET("/users/:id", authMiddleware, userHandler.GetUser)
-	r.POST("/users", authMiddleware, userHandler.CreateUser)
+	r.GET("/api/users", authMiddleware, userHandler.ListUsers)
+	r.GET("/api/users/:id", authMiddleware, userHandler.GetUser)
+	r.POST("/api/users", authMiddleware, userHandler.CreateUser)
+	r.PUT("/api/users/:id", authMiddleware, userHandler.UpdateUser)
+	r.DELETE("/api/users/:id", authMiddleware, userHandler.DeleteUser)
 
 	// Proxy POST requests to the product service
 	productServiceURL := "http://localhost:3010"
@@ -67,11 +69,25 @@ func main() {
 	r.GET("/api/products", authMiddleware, func(c *gin.Context) {
 		proxyToService(c, productServiceURL, "/api/products")
 	})
+	r.GET("/api/products/:id", func(c *gin.Context) {
+		proxyToService(c, productServiceURL, "/api/products/:id")
+	})
+	r.DELETE("/api/products/:id", authMiddleware, func(c *gin.Context) {
+		proxyToService(c, productServiceURL, "/api/products/:id")
+	})
+	r.PUT("/api/products/:id", authMiddleware, func(c *gin.Context) {
+		proxyToService(c, productServiceURL, "/api/products/:id")
+	})
 
 	// Proxy POST requests to the auth service
 	authServiceURL := "http://localhost:9000"
 	r.POST("/api/login", func(c *gin.Context) {
 		proxyToService(c, authServiceURL, "/api/login")
+	})
+	// Proxy POST requests to the auth service
+	paymentServiceURL := "http://localhost:9010"
+	r.POST("/api/payments", func(c *gin.Context) {
+		proxyToService(c, paymentServiceURL, "/api/payments")
 	})
 
 	// Run REST API on port 8080
@@ -80,22 +96,20 @@ func main() {
 	}
 }
 
-func proxyToService(c *gin.Context, target, path string) {
-	targetURL, err := url.Parse(target)
+func proxyToService(c *gin.Context, serviceURL string, path string) {
+	// Parse the service URL
+	target, err := url.Parse(serviceURL)
 	if err != nil {
-		log.Printf("Error parsing target URL: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid target URL"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid service URL"})
 		return
 	}
-	proxy := httputil.NewSingleHostReverseProxy(targetURL)
 
-	// Capture errors from the proxy
-	proxy.ErrorHandler = func(rw http.ResponseWriter, req *http.Request, err error) {
-		log.Printf("Error during proxy request to %s: %v", target, err)
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to proxy request", "details": err.Error()})
-	}
+	// Create a reverse proxy
+	proxy := httputil.NewSingleHostReverseProxy(target)
 
-	// Modify the request URL path to match the target service
+	// Update the request URL to forward to the correct path
 	c.Request.URL.Path = path
+
+	// Serve the request using the proxy
 	proxy.ServeHTTP(c.Writer, c.Request)
 }
