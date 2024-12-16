@@ -32,13 +32,6 @@ class Shipment(db.Model):
     def __repr__(self):
         return f'<Shipment {self.id}>'
 
-@app.route('/')
-def root():
-    return 'RESTful API'
-
-@app.route('/person')
-def person():
-    return 'Halo Person'
 
 @app.route('/shipments')
 def shipments():
@@ -52,7 +45,7 @@ def shipments():
     rows = cursor.fetchall()
     data = [dict(zip(column_names, row)) for row in rows]
 
-    cursor.close()  # Pindahkan close sebelum return
+    cursor.close()  
     return jsonify(data)
 
 @app.route('/detailshipments')
@@ -70,7 +63,7 @@ def detailshipments():
         rows = cursor.fetchall()
         data = [dict(zip(column_names, row)) for row in rows]
 
-        cursor.close()  # Pastikan close sebelum return
+        cursor.close()  
         return jsonify(data)
     
 @app.route('/add_shipments', methods=['POST'])
@@ -94,7 +87,7 @@ def add_shipments():
 
     return jsonify({"message": "Shipping record added successfully!"}), 201
 
-@app.route('/edit_shipments/<int:id>', methods=['UPDATE'])
+@app.route('/edit_shipments/<int:id>', methods=['PUT'])
 def edit_shipments(id):
     data = request.get_json()
     order_id = data.get('order_id')
@@ -105,7 +98,7 @@ def edit_shipments(id):
 
     cursor = mysql.connection.cursor()
     sql = """
-    EDIT shipments 
+    UPDATE shipments 
     SET order_id = %s, receiver_name = %s, sender_name = %s, address = %s, status = %s
     WHERE id = %s
     """
