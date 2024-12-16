@@ -22,9 +22,9 @@ func main() {
 	webhookHandler := handlers.WebhookHandler{DB: database}
 
 	// Register routes
-	r.POST("/payments", paymentHandler.CreatePayment)
+	r.POST("/api/payments", paymentHandler.CreatePayment)
 	r.POST("/webhook", webhookHandler.HandleWebhook) // Webhook endpoint
 
 	// Start the server
-	r.Run(":8080")
+	r.Run(":9010")
 }

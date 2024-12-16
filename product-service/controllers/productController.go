@@ -5,7 +5,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"product_service/models" // Import models package
+	"product_service/models"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -21,6 +22,7 @@ type ValidatePostInput struct {
 	Content string `form:"content" json:"content" binding:"required"`
 	Price   int    `form:"price" json:"price" binding:"required"`
 	Stock   int    `form:"stock" json:"stock" binding:"required"`
+	UserID  int    `form:"user_id" json:"user_id" binding:"required"`
 }
 
 func GetErrorMsg(fe validator.FieldError) string {
@@ -32,23 +34,19 @@ func GetErrorMsg(fe validator.FieldError) string {
 }
 
 func (pc *ProductController) GetAllProducts(c *gin.Context) {
-	// Define the query to fetch product and user information
 	query := `
 		SELECT p.id, p.title, p.content, p.price, p.stock, p.image, u.username
 		FROM product p
 		LEFT JOIN users u ON p.user_id = u.id
 	`
 
-	// Declare a slice to hold the result inline
 	var products []models.ProductWithUser
 
-	// Execute the query and directly scan into the products slice
 	if err := pc.DB.Raw(query).Scan(&products).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve products"})
 		return
 	}
 
-	// Return the result in JSON format directly
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "List of Products",
@@ -56,11 +54,18 @@ func (pc *ProductController) GetAllProducts(c *gin.Context) {
 	})
 }
 
-// Handler for adding a new product
 func (pc *ProductController) AddProduct(c *gin.Context) {
 	var input ValidatePostInput
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid form data"})
+		return
+	}
+
+	// Check if the user exists
+	var userExists bool
+	pc.DB.Model(&models.User{}).Select("count(*) > 0").Where("id = ?", input.UserID).Find(&userExists)
+	if !userExists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User does not exist"})
 		return
 	}
 
@@ -90,6 +95,7 @@ func (pc *ProductController) AddProduct(c *gin.Context) {
 		Content: input.Content,
 		Price:   input.Price,
 		Stock:   input.Stock,
+		UserID:  input.UserID,
 		Image:   filename,
 	}
 
@@ -105,10 +111,17 @@ func (pc *ProductController) AddProduct(c *gin.Context) {
 	})
 }
 
-// Handler for editing a product
 func (pc *ProductController) EditProduct(c *gin.Context) {
+	// Extract and convert the ID parameter from the URL
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
 	var product models.Product
-	if err := pc.DB.Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
+	if err := pc.DB.Where("id = ?", id).First(&product).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
 		return
 	}
@@ -116,6 +129,14 @@ func (pc *ProductController) EditProduct(c *gin.Context) {
 	var input ValidatePostInput
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid form data"})
+		return
+	}
+
+	// Check if the user exists
+	var userExists bool
+	pc.DB.Model(&models.User{}).Select("count(*) > 0").Where("id = ?", input.UserID).Find(&userExists)
+	if !userExists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User does not exist"})
 		return
 	}
 
@@ -145,6 +166,7 @@ func (pc *ProductController) EditProduct(c *gin.Context) {
 	product.Content = input.Content
 	product.Price = input.Price
 	product.Stock = input.Stock
+	product.UserID = input.UserID
 
 	if err := pc.DB.Save(&product).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update product"})
@@ -154,6 +176,55 @@ func (pc *ProductController) EditProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Product updated successfully",
+		"data":    product,
+	})
+}
+
+func (pc *ProductController) DeleteProduct(c *gin.Context) {
+	// Extract and convert the ID parameter from the URL
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	// Find the product by ID
+	var product models.Product
+	if err := pc.DB.Where("id = ?", id).First(&product).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find product"})
+		}
+		return
+	}
+
+	// Delete the product
+	if err := pc.DB.Delete(&product).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete product"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Product deleted successfully"})
+}
+
+func (pc *ProductController) GetProductByID(c *gin.Context) {
+	var product models.ProductWithUser
+	query := `
+		SELECT p.id, p.title, p.content, p.price, p.stock, p.image, u.username
+		FROM product p
+		LEFT JOIN users u ON p.user_id = u.id
+		WHERE p.id = ?
+	`
+	if err := pc.DB.Raw(query, c.Param("id")).Scan(&product).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Product retrieved successfully",
 		"data":    product,
 	})
 }

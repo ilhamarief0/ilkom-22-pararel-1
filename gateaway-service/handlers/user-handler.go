@@ -68,3 +68,55 @@ func (h *GatewayHandler) CreateUser(c *gin.Context) {
 	// Return response
 	c.JSON(http.StatusOK, gin.H{"success": res.Success, "message": res.Message})
 }
+
+func (h *GatewayHandler) DeleteUser(c *gin.Context) {
+	// Get ID from URL parameter
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	// Call gRPC DeleteUser
+	req := &pb.UserRequest{Id: int32(id)}
+	res, err := h.UserService.DeleteUser(context.Background(), req)
+	if err != nil {
+		log.Printf("Error calling DeleteUser: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
+		return
+	}
+
+	// Return response
+	c.JSON(http.StatusOK, gin.H{"success": res.Success, "message": res.Message})
+}
+
+func (h *GatewayHandler) UpdateUser(c *gin.Context) {
+	// Get ID from URL parameter
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	// Bind JSON request to UpdateUserRequest
+	var req pb.UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	req.Id = int32(id)
+
+	// Call gRPC UpdateUser
+	res, err := h.UserService.UpdateUser(context.Background(), &req)
+	if err != nil {
+		log.Printf("Error calling UpdateUser: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+		return
+	}
+
+	// Return response
+	c.JSON(http.StatusOK, gin.H{"success": res.Success, "message": res.Message})
+}

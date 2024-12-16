@@ -73,7 +73,7 @@ def add_shipments():
     receiver_name = data.get('receiver_name')
     sender_name = data.get('sender_name')
     address = data.get('address')
-    status = data.get('status', 'pending')  # default value if not provided
+    status = data.get('status', 'pending') 
 
     cursor = mysql.connection.cursor()
     sql = """
@@ -108,6 +108,7 @@ def edit_shipments(id):
     cursor.close()
 
     return jsonify({"message": "Shipping record updated successfully!"}), 200
+
 
 @app.route('/delete_shipping/<int:id>', methods=['DELETE'])
 def delete_shipping(id):

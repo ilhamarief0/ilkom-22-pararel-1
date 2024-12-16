@@ -114,3 +114,53 @@ func (s *UserServiceServer) CreateUser(ctx context.Context, req *pb.CreateUserRe
 
 	return &pb.CreateUserResponse{Success: true, Message: "User created successfully"}, nil
 }
+
+func (s *UserServiceServer) DeleteUser(ctx context.Context, req *pb.UserRequest) (*pb.DeleteUserResponse, error) {
+	stmt, err := s.DB.Prepare("DELETE FROM users WHERE id = ?")
+	if err != nil {
+		log.Printf("Failed to prepare DeleteUser statement: %v", err)
+		return &pb.DeleteUserResponse{Success: false, Message: "Failed to prepare query"}, err
+	}
+	defer stmt.Close()
+
+	result, err := stmt.Exec(req.Id)
+	if err != nil {
+		log.Printf("Failed to execute DeleteUser query: %v", err)
+		return &pb.DeleteUserResponse{Success: false, Message: "Failed to delete user"}, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf("Failed to retrieve rows affected for DeleteUser: %v", err)
+		return &pb.DeleteUserResponse{Success: false, Message: "Failed to retrieve result"}, err
+	}
+
+	if rowsAffected == 0 {
+		return &pb.DeleteUserResponse{Success: false, Message: "User not found"}, nil
+	}
+
+	return &pb.DeleteUserResponse{Success: true, Message: "User deleted successfully"}, nil
+}
+
+func (s *UserServiceServer) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("Failed to hash password: %v", err)
+		return &pb.UpdateUserResponse{Success: false, Message: "Failed to hash password"}, err
+	}
+
+	stmt, err := s.DB.Prepare("UPDATE users SET username = ?, email = ?, password = ?, role_id = ? WHERE id = ?")
+	if err != nil {
+		log.Printf("Failed to prepare UpdateUser statement: %v", err)
+		return &pb.UpdateUserResponse{Success: false, Message: "Failed to prepare query"}, err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(req.Username, req.Email, hashedPassword, req.RoleId, req.Id)
+	if err != nil {
+		log.Printf("Failed to execute UpdateUser query: %v", err)
+		return &pb.UpdateUserResponse{Success: false, Message: "Failed to update user"}, err
+	}
+
+	return &pb.UpdateUserResponse{Success: true, Message: "User updated successfully"}, nil
+}
