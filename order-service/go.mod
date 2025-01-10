@@ -1,7 +1,8 @@
-module github.com/ilhamarief0/ilkom-22-pararel-1/services/order
+module order-service
 
-go 1.20
+go 1.23.1
 
 require (
-	github.com/gorilla/mux v1.8.0
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
 )

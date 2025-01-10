@@ -1,13 +1,16 @@
-package routes
+package router
 
 import (
 	"net/http"
+	"order-service/handler"
 
 	"github.com/gorilla/mux"
-	"github.com/ilhamarief0/ilkom-22-pararel-1/services/order/handlers"
 )
 
-func RegisterRoutes(r *mux.Router) {
-	r.HandleFunc("/orders", handlers.GetOrders).Methods(http.MethodGet)
-	r.HandleFunc("/orders", handlers.CreateOrder).Methods(http.MethodPost)
+func SetupRouter() *mux.Router {
+	r := mux.NewRouter()
+	r.HandleFunc("/orders", handler.CreateOrderHandler).Methods(http.MethodPost)
+	r.HandleFunc("/orders", handler.GetOrdersHandler).Methods(http.MethodGet)
+	r.HandleFunc("/orders/{id}", handler.GetOrderByIdHandler).Methods(http.MethodGet)
+	return r
 }
