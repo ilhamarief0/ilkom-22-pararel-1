@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request
 from flask_mysqldb import MySQL
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine
+import pymysql
 
 app = Flask(__name__)
 
@@ -9,14 +11,40 @@ app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = ''
 app.config['MYSQL_DB'] = 'ecommerce'
+app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
+app.config['MYSQL_SSL_DISABLED'] = True  # Menonaktifkan SSL untuk Flask-Mysql
 
 # SQLAlchemy config
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/ecommerce'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Optional: suppresses warning
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/ecommerce?ssl_disabled=true'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 
 # Initialize MySQL and SQLAlchemy
 mysql = MySQL(app)
 db = SQLAlchemy(app)
+
+# Function to create the database if it doesn't exist
+def create_database():
+    # Create an engine without specifying the database
+    engine = create_engine('mysql+pymysql://root:@localhost')
+    
+    # Create a raw connection
+    conn = engine.raw_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Execute SQL to create the database
+        cursor.execute("CREATE DATABASE IF NOT EXISTS ecommerce")
+        conn.commit()  # Commit the changes
+        print("Database created or already exists.")
+    except pymysql.MySQLError as e:
+        print(f"Error creating database: {e}")
+    finally:
+        cursor.close()  # Close the cursor
+        conn.close()  # Close the connection
+
+# Create the database before starting the application
+create_database()
 
 # Define the Shipment model
 class Shipment(db.Model):
@@ -31,7 +59,6 @@ class Shipment(db.Model):
 
     def __repr__(self):
         return f'<Shipment {self.id}>'
-
 
 @app.route('/shipments')
 def shipments():
@@ -109,7 +136,6 @@ def edit_shipments(id):
 
     return jsonify({"message": "Shipping record updated successfully!"}), 200
 
-
 @app.route('/delete_shipping/<int:id>', methods=['DELETE'])
 def delete_shipping(id):
     cursor = mysql.connection.cursor()
@@ -121,6 +147,25 @@ def delete_shipping(id):
 
     return jsonify({"message": "Shipping record deleted successfully!"}), 200
 
+@app.route('/export-pdf')
+def export_pdf():
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT * FROM shipments")
+
+    column_names = [i[0] for i in cursor.description]
+
+    rows = cursor.fetchall()
+    data = [dict(zip(column_names, row)) for row in rows]
+    cursor.close()
+
+    rendered = render_template('report_template.html', shipments=data)
+    
+    pdf = pdfkit.from_string(rendered, False)
+    
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=laporan_pengiriman.pdf'
+    return response
 
 # Create the database tables in the application context
 def create_tables():
